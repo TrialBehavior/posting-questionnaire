@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posting Document Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .step {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #2ecc71;
+        }
+
+        .step-header {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .step-number {
+            background: #2ecc71;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: #2ecc71;
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #27ae60;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .questions-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: white;
+        }
+
+        .question-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .question-item:hover {
+            background: #e9ecef;
+        }
+
+        .question-item.selected {
+            background: #d4edda;
+            border-color: #2ecc71;
+        }
+
+        .question-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .question-label {
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .question-variable {
+            font-size: 12px;
+            color: #666;
+            margin-left: 25px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2ecc71;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .section-header {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .select-all-container {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 6px;
+        }
+
+        .select-all-container label {
+            margin-bottom: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .select-all-container input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .selection-summary {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .subsection {
+            margin-bottom: 25px;
+        }
+
+        .subsection-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 Posting Document Generator</h1>
+            <p>Upload your SPSS file and generate a formatted Word document</p>
+        </div>
+
+        <div class="content">
+            <div id="alertContainer"></div>
+
+            <!-- Step 1: Upload File -->
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    Upload SPSS File
+                </div>
+                <div class="form-group">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" accept=".sav">
+                        <label for="fileInput" class="file-input-label">
+                            Choose SPSS File (.sav)
+                        </label>
+                    </div>
+                    <div id="fileName" class="file-name"></div>
+                </div>
+            </div>
+
+            <!-- Step 2: Enter Information -->
+            <div id="step2" class="step hidden">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    Enter Document Information
+                </div>
+                <div class="form-group">
+                    <label for="questionnaireNum">Questionnaire Number *</label>
+                    <input type="text" id="questionnaireNum" placeholder="e.g., 1">
+                </div>
+                <div class="form-group">
+                    <label for="caseId">Case ID *</label>
+                    <input type="text" id="caseId" placeholder="e.g., Smith v. Jones">
+                </div>
+                <div class="form-group">
+                    <label for="plaintiffName">Plaintiff Name</label>
+                    <input type="text" id="plaintiffName" placeholder="e.g., John Smith">
+                    <div class="info-text">Required only if selecting plaintiff argument questions</div>
+                </div>
+                <div class="form-group">
+                    <label for="defendantName">Defendant Name</label>
+                    <input type="text" id="defendantName" placeholder="e.g., ABC Corporation">
+                    <div class="info-text">Required only if selecting defendant argument questions</div>
+                </div>
+            </div>
+
+            <!-- Step 3: Select Questions -->
+            <div id="step3" class="step hidden">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    Select Questions
+                </div>
+
+                <!-- Multiple Choice Questions -->
+                <div class="subsection">
+                    <div class="subsection-title">Multiple Choice Questions</div>
+                    <div class="select-all-container">
+                        <label>
+                            <input type="checkbox" id="selectAllMC">
+                            Select All Multiple Choice Questions
+                        </label>
+                    </div>
+                    <div id="mcQuestionsContainer" class="questions-container"></div>
+                    <div id="mcSelectionSummary" class="selection-summary">No questions selected</div>
+                </div>
+
+                <!-- Plaintiff Arguments -->
+                <div class="subsection">
+                    <div class="subsection-title">Plaintiff Arguments</div>
+                    <div class="select-all-container">
+                        <label>
+                            <input type="checkbox" id="selectAllPlaintiff">
+                            Select All Plaintiff Arguments
+                        </label>
+                    </div>
+                    <div id="plaintiffQuestionsContainer" class="questions-container"></div>
+                    <div id="plaintiffSelectionSummary" class="selection-summary">No questions selected</div>
+                </div>
+
+                <!-- Defendant Arguments -->
+                <div class="subsection">
+                    <div class="subsection-title">Defendant Arguments</div>
+                    <div class="select-all-container">
+                        <label>
+                            <input type="checkbox" id="selectAllDefendant">
+                            Select All Defendant Arguments
+                        </label>
+                    </div>
+                    <div id="defendantQuestionsContainer" class="questions-container"></div>
+                    <div id="defendantSelectionSummary" class="selection-summary">No questions selected</div>
+                </div>
+
+                <!-- Apportionment Questions -->
+                <div class="subsection">
+                    <div class="subsection-title">Apportionment Questions</div>
+                    <div class="select-all-container">
+                        <label>
+                            <input type="checkbox" id="selectAllApportionment">
+                            Select All Apportionment Questions
+                        </label>
+                    </div>
+                    <div id="apportionmentQuestionsContainer" class="questions-container"></div>
+                    <div id="apportionmentSelectionSummary" class="selection-summary">No questions selected</div>
+                </div>
+
+                <!-- Damages Questions -->
+                <div class="subsection">
+                    <div class="subsection-title">Damages Questions</div>
+                    <div class="select-all-container">
+                        <label>
+                            <input type="checkbox" id="selectAllDamages">
+                            Select All Damages Questions
+                        </label>
+                    </div>
+                    <div id="damagesQuestionsContainer" class="questions-container"></div>
+                    <div id="damagesSelectionSummary" class="selection-summary">No questions selected</div>
+                </div>
+            </div>
+
+            <!-- Step 4: Generate Document -->
+            <div id="step4" class="step hidden">
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    Generate Document
+                </div>
+                <button id="generateBtn" class="btn btn-success">Generate Word Document</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFilename = '';
+        let allQuestions = [];
+        let selectedMCQuestions = new Set();
+        let selectedPlaintiffQuestions = new Set();
+        let selectedDefendantQuestions = new Set();
+        let selectedApportionmentQuestions = new Set();
+        let selectedDamagesQuestions = new Set();
+
+        // File upload handler
+        document.getElementById('fileInput').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    uploadedFilename = data.filename;
+                    allQuestions = data.questions;
+
+                    // Show subsequent steps
+                    document.getElementById('step2').classList.remove('hidden');
+                    document.getElementById('step3').classList.remove('hidden');
+                    document.getElementById('step4').classList.remove('hidden');
+
+                    // Populate question lists
+                    populateQuestions(allQuestions, 'mcQuestionsContainer', selectedMCQuestions, updateMCSelectionSummary);
+                    populateQuestions(allQuestions, 'plaintiffQuestionsContainer', selectedPlaintiffQuestions, updatePlaintiffSelectionSummary);
+                    populateQuestions(allQuestions, 'defendantQuestionsContainer', selectedDefendantQuestions, updateDefendantSelectionSummary);
+                    populateQuestions(allQuestions, 'apportionmentQuestionsContainer', selectedApportionmentQuestions, updateApportionmentSelectionSummary);
+                    populateQuestions(allQuestions, 'damagesQuestionsContainer', selectedDamagesQuestions, updateDamagesSelectionSummary);
+
+                    showAlert(`File uploaded successfully! Found ${data.total_responses} responses and ${data.questions.length} questions.`, 'success');
+                } else {
+                    showAlert(data.error || 'Error uploading file', 'error');
+                }
+            } catch (error) {
+                showAlert('Error uploading file: ' + error.message, 'error');
+            }
+        });
+
+        // Populate questions list
+        function populateQuestions(questions, containerId, selectedSet, updateCallback) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                const div = document.createElement('div');
+                div.className = 'question-item';
+                div.dataset.variable = q.variable;
+                
+                div.innerHTML = `
+                    <input type="checkbox" value="${q.variable}" class="question-checkbox">
+                    <span class="question-label">${q.label}</span>
+                    <div class="question-variable">Variable: ${q.variable} | ${q.num_values} response options</div>
+                `;
+
+                container.appendChild(div);
+            });
+
+            // Add click handlers to entire question item
+            container.querySelectorAll('.question-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+            });
+
+            // Add change handlers to checkboxes
+            container.querySelectorAll('.question-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function(e) {
+                    e.stopPropagation();
+                    const item = this.closest('.question-item');
+                    const variable = this.value;
+                    
+                    if (this.checked) {
+                        selectedSet.add(variable);
+                        item.classList.add('selected');
+                    } else {
+                        selectedSet.delete(variable);
+                        item.classList.remove('selected');
+                    }
+                    
+                    updateCallback();
+                });
+            });
+        }
+
+        // Select all checkboxes
+        document.getElementById('selectAllMC').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#mcQuestionsContainer .question-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                cb.dispatchEvent(new Event('change'));
+            });
+        });
+
+        document.getElementById('selectAllPlaintiff').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#plaintiffQuestionsContainer .question-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                cb.dispatchEvent(new Event('change'));
+            });
+        });
+
+        document.getElementById('selectAllDefendant').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#defendantQuestionsContainer .question-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                cb.dispatchEvent(new Event('change'));
+            });
+        });
+
+        document.getElementById('selectAllApportionment').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#apportionmentQuestionsContainer .question-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                cb.dispatchEvent(new Event('change'));
+            });
+        });
+
+        document.getElementById('selectAllDamages').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#damagesQuestionsContainer .question-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                cb.dispatchEvent(new Event('change'));
+            });
+        });
+
+        // Update selection summaries
+        function updateMCSelectionSummary() {
+            const summary = document.getElementById('mcSelectionSummary');
+            const count = selectedMCQuestions.size;
+            summary.textContent = count === 0 ? 'No questions selected' : `${count} question${count !== 1 ? 's' : ''} selected`;
+        }
+
+        function updatePlaintiffSelectionSummary() {
+            const summary = document.getElementById('plaintiffSelectionSummary');
+            const count = selectedPlaintiffQuestions.size;
+            summary.textContent = count === 0 ? 'No questions selected' : `${count} question${count !== 1 ? 's' : ''} selected`;
+        }
+
+        function updateDefendantSelectionSummary() {
+            const summary = document.getElementById('defendantSelectionSummary');
+            const count = selectedDefendantQuestions.size;
+            summary.textContent = count === 0 ? 'No questions selected' : `${count} question${count !== 1 ? 's' : ''} selected`;
+        }
+
+        function updateApportionmentSelectionSummary() {
+            const summary = document.getElementById('apportionmentSelectionSummary');
+            const count = selectedApportionmentQuestions.size;
+            summary.textContent = count === 0 ? 'No questions selected' : `${count} question${count !== 1 ? 's' : ''} selected`;
+        }
+
+        function updateDamagesSelectionSummary() {
+            const summary = document.getElementById('damagesSelectionSummary');
+            const count = selectedDamagesQuestions.size;
+            summary.textContent = count === 0 ? 'No questions selected' : `${count} question${count !== 1 ? 's' : ''} selected`;
+        }
+
+        // Generate document button
+        document.getElementById('generateBtn').addEventListener('click', async function() {
+            const questionnaireNum = document.getElementById('questionnaireNum').value.trim();
+            const caseId = document.getElementById('caseId').value.trim();
+            const plaintiffName = document.getElementById('plaintiffName').value.trim();
+            const defendantName = document.getElementById('defendantName').value.trim();
+
+            if (!questionnaireNum) {
+                showAlert('Please enter a questionnaire number', 'error');
+                return;
+            }
+
+            if (!caseId) {
+                showAlert('Please enter a case ID', 'error');
+                return;
+            }
+
+            // Check if plaintiff arguments are selected but name is missing
+            if (selectedPlaintiffQuestions.size > 0 && !plaintiffName) {
+                showAlert('Please enter plaintiff name for plaintiff arguments section', 'error');
+                return;
+            }
+
+            // Check if defendant arguments are selected but name is missing
+            if (selectedDefendantQuestions.size > 0 && !defendantName) {
+                showAlert('Please enter defendant name for defendant arguments section', 'error');
+                return;
+            }
+
+            if (selectedMCQuestions.size === 0 && selectedPlaintiffQuestions.size === 0 && 
+                selectedDefendantQuestions.size === 0 && selectedApportionmentQuestions.size === 0 &&
+                selectedDamagesQuestions.size === 0) {
+                showAlert('Please select at least one question from any section', 'error');
+                return;
+            }
+
+            this.disabled = true;
+            this.innerHTML = 'Generating... <span class="loader"></span>';
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: uploadedFilename,
+                        mc_questions: Array.from(selectedMCQuestions),
+                        plaintiff_questions: Array.from(selectedPlaintiffQuestions),
+                        defendant_questions: Array.from(selectedDefendantQuestions),
+                        apportionment_questions: Array.from(selectedApportionmentQuestions),
+                        damages_questions: Array.from(selectedDamagesQuestions),
+                        questionnaire_num: questionnaireNum,
+                        case_id: caseId,
+                        plaintiff_name: plaintiffName,
+                        defendant_name: defendantName
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Posted_Q${questionnaireNum}_${caseId.replace(/\s+/g, '_')}.docx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+
+                    showAlert('Document generated successfully!', 'success');
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || 'Error generating document', 'error');
+                }
+            } catch (error) {
+                showAlert('Error generating document: ' + error.message, 'error');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = 'Generate Word Document';
+            }
+        });
+
+        // Show alert message
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            container.innerHTML = '';
+            container.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
