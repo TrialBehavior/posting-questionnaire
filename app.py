@@ -20,6 +20,9 @@ app = Flask(__name__)
 env = os.environ.get('FLASK_ENV', 'development')
 app.config.from_object(config[env])
 
+# Ensure upload directory exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 def add_thick_border(paragraph):
     """Add a thick black border below a paragraph"""
     pPr = paragraph._element.get_or_add_pPr()
@@ -312,7 +315,7 @@ def create_apportionment_grid(doc, df, defendant_name, defendant_var, letter):
         set_cell_border(right_cell, top=True, left=True, bottom=True, right=True)
     
     # Add spacing after table
-    doc.add_paragraph().paragraph_format.space_after = Pt(12)
+    doc.add_paragraph().paragraph_format.space_after = Pt(24)
 
 def create_damages_grid(doc, df, category_name, category_var, letter):
     """Create damages grid for a single category"""
@@ -434,7 +437,7 @@ def create_damages_grid(doc, df, category_name, category_var, letter):
         set_cell_border(right_cell, top=True, left=True, bottom=True, right=True)
     
     # Add spacing after table
-    doc.add_paragraph().paragraph_format.space_after = Pt(12)
+    doc.add_paragraph().paragraph_format.space_after = Pt(24)
 
 def create_apportionment_section(doc, df, meta, selected_questions, question_number):
     """Create the apportionment section with main question and defendant grids"""
@@ -624,11 +627,11 @@ def create_argument_grid(doc, df, meta, selected_questions, party_name, party_ty
             set_cell_border(cells[i], top=True, left=True, bottom=True, right=True)
     
     # Add spacing after table
-    doc.add_paragraph().paragraph_format.space_after = Pt(12)
+    doc.add_paragraph().paragraph_format.space_after = Pt(24)
 
 def create_combined_document(df, meta, mc_questions, plaintiff_questions, defendant_questions, 
                             apportionment_questions, damages_questions, questionnaire_num, case_id, 
-                            plaintiff_name, defendant_name):
+                            plaintiff_name, defendant_name, custom_date):
     """Create document with multiple choice questions, argument grids, apportionment, and damages"""
     doc = Document()
     
@@ -695,7 +698,7 @@ def create_combined_document(df, meta, mc_questions, plaintiff_questions, defend
             question_para = doc.add_paragraph()
             question_run = question_para.add_run(f'{current_question_num}.  {question_label}')
             set_font(question_run, size=12, bold=True)
-            question_para.paragraph_format.space_after = Pt(6)
+            question_para.paragraph_format.space_after = Pt(12)
             
             # Calculate distribution with proper rounding
             percentages = calculate_distribution_percentages(df[question_var])
@@ -721,7 +724,7 @@ def create_combined_document(df, meta, mc_questions, plaintiff_questions, defend
                 # Add all parts with proper spacing
                 for i, (pct, response_label, count) in enumerate(response_text_parts):
                     if i > 0:
-                        response_para.add_run('            ')  # double tab spacing
+                        response_para.add_run('                 ')  # triple tab spacing
                     
                     # Add text without quotation marks
                     text_run = response_para.add_run(f'{pct}%  {response_label}  (')
@@ -731,7 +734,7 @@ def create_combined_document(df, meta, mc_questions, plaintiff_questions, defend
                     end_run = response_para.add_run(f' = {count})')
                     set_font(end_run, size=12)
                 
-                response_para.paragraph_format.space_after = Pt(12)
+                response_para.paragraph_format.space_after = Pt(24)
             else:
                 # Display each response on its own line (with tab indent)
                 for value_code in sorted(value_labels.keys()):
@@ -742,7 +745,11 @@ def create_combined_document(df, meta, mc_questions, plaintiff_questions, defend
                         
                         response_para = doc.add_paragraph()
                         response_para.paragraph_format.left_indent = Inches(0.5)
-                        text_run = response_para.add_run(f'{pct}%  {response_label}  (')
+                        
+                        # Add space before single-digit percentages for alignment
+                        pct_text = f'  {pct}%' if pct < 10 else f'{pct}%'
+                        
+                        text_run = response_para.add_run(f'{pct_text}  {response_label}  (')
                         set_font(text_run, size=12)
                         italic_run = response_para.add_run('n')
                         set_font(italic_run, size=12, italic=True)
@@ -752,7 +759,7 @@ def create_combined_document(df, meta, mc_questions, plaintiff_questions, defend
                 
                 # Add spacing after the last response option
                 if len(value_labels) > 0:
-                    response_para.paragraph_format.space_after = Pt(12)
+                    response_para.paragraph_format.space_after = Pt(24)
             
             current_question_num += 1
     
@@ -785,10 +792,10 @@ def create_combined_document(df, meta, mc_questions, plaintiff_questions, defend
     footer_table.rows[0].cells[1].width = Inches(2.16)
     footer_table.rows[0].cells[2].width = Inches(2.17)
     
-    # Left cell
+    # Left cell - use custom_date instead of datetime.now()
     left_cell = footer_table.rows[0].cells[0]
     left_para = left_cell.paragraphs[0]
-    left_run1 = left_para.add_run(f'Q{questionnaire_num} ({datetime.now().strftime("%m/%d/%y")})\n')
+    left_run1 = left_para.add_run(f'Q{questionnaire_num} ({custom_date})\n')
     set_font(left_run1, size=8)
     left_run2 = left_para.add_run(case_id)
     set_font(left_run2, size=8)
@@ -900,6 +907,7 @@ def generate_document():
         case_id = data.get('case_id', '')
         plaintiff_name = data.get('plaintiff_name', '')
         defendant_name = data.get('defendant_name', '')
+        custom_date = data.get('custom_date', '')  # Get custom date from request
         
         if not filename:
             return jsonify({'error': 'Missing filename'}), 400
@@ -914,10 +922,10 @@ def generate_document():
         
         df, meta = load_spss_data(file_path)
         
-        # Create document
+        # Create document with custom date
         doc = create_combined_document(df, meta, mc_questions, plaintiff_questions, defendant_questions,
                                       apportionment_questions, damages_questions, questionnaire_num, 
-                                      case_id, plaintiff_name, defendant_name)
+                                      case_id, plaintiff_name, defendant_name, custom_date)
         
         # Save to BytesIO
         doc_io = io.BytesIO()

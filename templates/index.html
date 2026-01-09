@@ -90,6 +90,7 @@
         }
 
         input[type="text"],
+        input[type="date"],
         input[type="file"] {
             width: 100%;
             padding: 12px;
@@ -100,6 +101,7 @@
         }
 
         input[type="text"]:focus,
+        input[type="date"]:focus,
         input[type="file"]:focus {
             outline: none;
             border-color: #2ecc71;
@@ -356,6 +358,11 @@
                     <input type="text" id="caseId" placeholder="e.g., Smith v. Jones">
                 </div>
                 <div class="form-group">
+                    <label for="documentDate">Document Date *</label>
+                    <input type="date" id="documentDate">
+                    <div class="info-text">This date will appear in the footer (defaults to today)</div>
+                </div>
+                <div class="form-group">
                     <label for="plaintiffName">Plaintiff Name</label>
                     <input type="text" id="plaintiffName" placeholder="e.g., John Smith">
                     <div class="info-text">Required only if selecting plaintiff argument questions</div>
@@ -459,6 +466,9 @@
         let selectedDefendantQuestions = new Set();
         let selectedApportionmentQuestions = new Set();
         let selectedDamagesQuestions = new Set();
+
+        // Set default date to today
+        document.getElementById('documentDate').valueAsDate = new Date();
 
         // File upload handler
         document.getElementById('fileInput').addEventListener('change', async function(e) {
@@ -625,12 +635,22 @@
             summary.textContent = count === 0 ? 'No questions selected' : `${count} question${count !== 1 ? 's' : ''} selected`;
         }
 
+        // Format date as MM/DD/YY
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = String(date.getFullYear()).slice(-2);
+            return `${month}/${day}/${year}`;
+        }
+
         // Generate document button
         document.getElementById('generateBtn').addEventListener('click', async function() {
             const questionnaireNum = document.getElementById('questionnaireNum').value.trim();
             const caseId = document.getElementById('caseId').value.trim();
             const plaintiffName = document.getElementById('plaintiffName').value.trim();
             const defendantName = document.getElementById('defendantName').value.trim();
+            const documentDate = document.getElementById('documentDate').value;
 
             if (!questionnaireNum) {
                 showAlert('Please enter a questionnaire number', 'error');
@@ -639,6 +659,11 @@
 
             if (!caseId) {
                 showAlert('Please enter a case ID', 'error');
+                return;
+            }
+
+            if (!documentDate) {
+                showAlert('Please select a document date', 'error');
                 return;
             }
 
@@ -680,7 +705,8 @@
                         questionnaire_num: questionnaireNum,
                         case_id: caseId,
                         plaintiff_name: plaintiffName,
-                        defendant_name: defendantName
+                        defendant_name: defendantName,
+                        custom_date: formatDate(documentDate)
                     })
                 });
 
